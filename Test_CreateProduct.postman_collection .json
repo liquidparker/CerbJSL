@@ -1,0 +1,632 @@
+{
+	"info": {
+		"_postman_id": "1c1008ec-4b10-4df3-a685-d861e1219424",
+		"name": "TestAPI_CreateProduct",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "P41 - Import products to the operator information system Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"\r",
+							"\r",
+							"//pm.test(\"Body matches string\", function () {\r",
+							"//    pm.expect(pm.response.text()).to.include(\"import_id\");\r",
+							"//});\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.test(\"Status code ok\", function () {\r",
+							"    pm.expect(jsonData).to.be.oneOf([201,202,206]);\r",
+							"});\r",
+							"pm.test(\"Import id present\", function () {\r",
+							"    pm.expect(jsonData.to.have.property('import_id'));\r",
+							"});\r",
+							"\r",
+							"pm.collectionVariables.set(\"import_id\", jsonData[\"import_id\"]);\r",
+							"console.log(jsonData[\"import_id\"]);\r",
+							"\r",
+							"setTimeout(() => {}, 100000);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.clear();\r",
+							"\r",
+							"var datej = new Date().toISOString().slice(0, 8);\r",
+							"var jour1 = new Date().getDate()+1;\r",
+							"datej = datej + jour1;\r",
+							"pm.collectionVariables.set(\"date_jour\", datej);//+jour1.toString());\r",
+							"console.log(datej);\r",
+							"\r",
+							"pm.collectionVariables.set(\"Maxretry\", 0);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{SHOP_KEY}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "https://github.com/liquidparker/CerbJSL/blob/main/mirakl-export-JSL-products_shop_id-2014_multilang.xml"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{URL}}/api/products/imports?shop_id={{shop_id}}",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"products",
+						"imports"
+					],
+					"query": [
+						{
+							"key": "shop_id",
+							"value": "{{shop_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "P42 - Get the import status for a product import Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.collectionVariables.set(\"import_id\", jsonData[\"import_id\"]);\r",
+							"\r",
+							"pm.test(\"Verif pas d'erreur import\", function () {\r",
+							"\r",
+							"    pm.expect(jsonData[\"transform_lines_in_error\"]).to.eql(0);\r",
+							"    pm.expect(jsonData[\"transform_lines_with_warning\"]).to.eql(0);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{OPERATOR_KEY}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{URL}}/api/products/imports/{{import_id}}",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"products",
+						"imports",
+						"{{import_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CM51 - recup_mirakl_id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();\r",
+							"//retour code\r",
+							"tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"//Header retour\r",
+							"var  contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r",
+							"//tests[\"Response_time_less_than_2s\"] = responseTime < 2000;\r",
+							"tests[\"Has_Content_Type\"] = contentTypeHeaderExists;\r",
+							"if (contentTypeHeaderExists) {\r",
+							"tests[\"Content_Type_application_json\"] = responseHeaders[\"Content-Type\"].has(\"application/json\");\r",
+							"}\r",
+							"\r",
+							"//Verif mirakl id présent\r",
+							"pm.test(\"contain mirakl_product_id\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"mirakl_product_id\");\r",
+							"});\r",
+							"\r",
+							"//SelectionProduit dans le JSON\r",
+							"var NbResult = (jsonData).length;\r",
+							"console.log(NbResult + \": number of result in json\");\r",
+							"var eanCompare, SelectionPdt;\r",
+							"var CollectionEan  = pm.collectionVariables.get(\"ean\");\r",
+							"console.log(CollectionEan+\" : collectionEan\"); \r",
+							"   for (var i = 0; i < NbResult; i++) \r",
+							"    {\r",
+							"       eanCompare = jsonData[i].data[\"gtin_EAN13\"];\r",
+							"\r",
+							"       if (JSON.stringify(CollectionEan) === JSON.stringify(eanCompare)) {\r",
+							"           SelectionPdt = i;\r",
+							"           //console.log(SelectionPdt);\r",
+							"        }       \r",
+							"    }\r",
+							"\r",
+							"//Relaunch api if result not found\r",
+							"//console.log(SelectionOffer);\r",
+							"var Maxretry = pm.collectionVariables.get(\"Maxretry\");\r",
+							"if ( ((SelectionPdt === undefined) && (Maxretry<10)) || (_.isEmpty(jsonData)) ){\r",
+							"    Maxretry = Maxretry +1;\r",
+							"    pm.collectionVariables.set(\"Maxretry\", Maxretry);\r",
+							"    console.log(\"Pas encore de reponse\")\r",
+							"    setTimeout(() => {}, 10000);\r",
+							"    postman.setNextRequest(pm.info.requestId);\r",
+							"}\r",
+							"else {\r",
+							"//Mise a jour variable collection du mirakl id\r",
+							"var mirakl_product_id = jsonData[SelectionPdt][\"mirakl_product_id\"];\r",
+							"pm.collectionVariables.set(\"mirakl_id\", mirakl_product_id);\r",
+							"console.log(mirakl_product_id + \": mirakl id\");\r",
+							"//var ean13 = jsonData[SelectionPdt].data[\"gtin_EAN13\"];\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"ean\", [\"3233690021278\"]);\r",
+							"pm.collectionVariables.set(\"shop_sku\", \"JSL_2070_053\");\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{OPERATOR_KEY}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{URL}}/api/mcm/products/export?updated_to={{date_jour}}&acceptance_status=NEW",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"mcm",
+						"products",
+						"export"
+					],
+					"query": [
+						{
+							"key": "updated_since",
+							"value": "2021-04-27",
+							"disabled": true
+						},
+						{
+							"key": "updated_to",
+							"value": "{{date_jour}}"
+						},
+						{
+							"key": "acceptance_status",
+							"value": "NEW"
+						},
+						{
+							"key": "validation_status",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "synchronization_status",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "product_sku",
+							"value": "8714982010797",
+							"disabled": true
+						},
+						{
+							"key": "product_id",
+							"value": "8714982010797",
+							"disabled": true
+						},
+						{
+							"key": "variant_group_code",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "catalog",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "rejection_reason",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "category",
+							"value": "",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CM21 - Synchronize products Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();\r",
+							"tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"pm.test(\"reponse verif\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"tracking_id\");\r",
+							"});\r",
+							"var tracking_id = jsonData[\"tracking_id\"];\r",
+							"console.log(tracking_id);\r",
+							"//sauvegarde du tracking id\r",
+							"pm.collectionVariables.set(\"tracking_id\", tracking_id);\r",
+							"\r",
+							"setTimeout(() => {}, 100000);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{OPERATOR_KEY}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"mirakl_product_id\": \"{{mirakl_id}}\",\n        \"acceptance\": {\n            \"status\": \"ACCEPTED\"\n        }\n    }\n]"
+				},
+				"url": {
+					"raw": "{{URL}}/api/mcm/products/synchronization",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"mcm",
+						"products",
+						"synchronization"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CM23 - Verif status report Copy 3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json().processed_items;\r",
+							"//retour code\r",
+							"tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"\r",
+							"//SelectionProduit dans le JSON\r",
+							"var NbResult = (jsonData).length;\r",
+							"console.log(NbResult + \": number of result in json\");\r",
+							"var mirakl_idCompare, SelectionPdt;\r",
+							"var Collectionmirakl_id  = pm.collectionVariables.get(\"mirakl_id\");\r",
+							"   for (var i = 0; i < NbResult; i++) \r",
+							"    {\r",
+							"       mirakl_idCompare = jsonData[i][\"mirakl_product_id\"];\r",
+							"\r",
+							"       if (JSON.stringify(Collectionmirakl_id) === JSON.stringify(mirakl_idCompare)) {\r",
+							"           SelectionPdt = i;\r",
+							"           console.log(SelectionPdt);\r",
+							"        }       \r",
+							"    }\r",
+							"//Relaunch api if result not found\r",
+							"//console.log(SelectionOffer);\r",
+							"var Maxretry = pm.collectionVariables.get(\"Maxretry\");\r",
+							"if ( (SelectionPdt === undefined) && (Maxretry<10)){\r",
+							"    Maxretry = Maxretry +1;\r",
+							"    pm.collectionVariables.set(\"Maxretry\", Maxretry);\r",
+							"    console.log(\"Pas encore de reponse\")\r",
+							"    setTimeout(() => {}, 10000);\r",
+							"    postman.setNextRequest(pm.info.requestId);\r",
+							"}\r",
+							"else {\r",
+							"//verif champ\r",
+							"pm.test(\"Vérif champ\", function () {\r",
+							"    pm.expect(jsonData[SelectionPdt][\"mirakl_product_id\"]).to.eql(pm.collectionVariables.get(\"mirakl_id\"));\r",
+							"    console.log((jsonData[SelectionPdt][\"mirakl_product_id\"])+\" : Json mirakl_id\"); \r",
+							"    pm.expect(jsonData[SelectionPdt].acceptance[\"status\"]).to.eql(\"ACCEPTED\");\r",
+							"    pm.expect(jsonData[SelectionPdt][\"status\"]).to.eql(\"SUCCESS\");\r",
+							"    //pm.expect(jsonData[0].synchronization[0][\"status\"]).to.eql(\"PENDING\"); à verif dans le kafka\r",
+							"});\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{OPERATOR_KEY}}"
+					}
+				],
+				"url": {
+					"raw": "{{URL}}/api/mcm/products/synchronization/{{tracking_id}}/report",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"mcm",
+						"products",
+						"synchronization",
+						"{{tracking_id}}",
+						"report"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CM51 - Verif synchronize",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();\r",
+							"//retour code\r",
+							"tests[\"returnCode_200\"] = responseCode.code === 200 || responseCode.code === 201 || responseCode.code === 206;\r",
+							"//Header retour\r",
+							"var  contentTypeHeaderExists = responseHeaders.hasOwnProperty(\"Content-Type\");\r",
+							"//tests[\"Response_time_less_than_2s\"] = responseTime < 2000;\r",
+							"tests[\"Has_Content_Type\"] = contentTypeHeaderExists;\r",
+							"if (contentTypeHeaderExists) {\r",
+							"tests[\"Content_Type_application_json\"] = responseHeaders[\"Content-Type\"].has(\"application/json\");\r",
+							"}\r",
+							"\r",
+							"//Verif mirakl id présent\r",
+							"pm.test(\"contain mirakl_product_id\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"mirakl_product_id\");\r",
+							"});\r",
+							"\r",
+							"//SelectionProduit dans le JSON\r",
+							"var NbResult = (jsonData).length;\r",
+							"console.log(NbResult + \": number of result in json\");\r",
+							"var eanCompare, SelectionPdt;\r",
+							"var CollectionEan  = pm.collectionVariables.get(\"ean\");\r",
+							"   for (var i = 0; i < NbResult; i++) \r",
+							"    {\r",
+							"       eanCompare = jsonData[i].data[\"gtin_EAN13\"];\r",
+							"\r",
+							"       if (JSON.stringify(CollectionEan) === JSON.stringify(eanCompare)) {\r",
+							"           SelectionPdt = i;\r",
+							"           console.log(SelectionPdt);\r",
+							"        }       \r",
+							"    }\r",
+							"//Relaunch api if result not found\r",
+							"//console.log(SelectionOffer);\r",
+							"var Maxretry = pm.collectionVariables.get(\"Maxretry\");\r",
+							"if ( ((SelectionPdt === undefined) && (Maxretry<10)) || (jsonData[SelectionPdt].synchronization[\"status\"] != (\"SYNCHRONIZED\")) ){\r",
+							"    Maxretry = Maxretry +1;\r",
+							"    pm.collectionVariables.set(\"Maxretry\", Maxretry);\r",
+							"    console.log(\"Pas encore de reponse\")\r",
+							"    setTimeout(() => {}, 10000);\r",
+							"    postman.setNextRequest(pm.info.requestId);\r",
+							"}\r",
+							"else {\r",
+							"//verif champ\r",
+							"pm.test(\"Vérif champ\", function () {\r",
+							"    pm.expect(jsonData[SelectionPdt][\"mirakl_product_id\"]).to.eql(pm.collectionVariables.get(\"mirakl_id\"));\r",
+							"    console.log((jsonData[SelectionPdt][\"mirakl_product_id\"])+\" : Json mirakl_id\"); \r",
+							"    pm.expect(jsonData[SelectionPdt].data[\"gtin_EAN13\"]).to.eql(pm.collectionVariables.get(\"ean\"));\r",
+							"    console.log((jsonData[SelectionPdt].data[\"gtin_EAN13\"])+\" : JSon ean\"); \r",
+							"    pm.expect(jsonData[SelectionPdt].acceptance[\"status\"]).to.eql(\"ACCEPTED\");\r",
+							"    pm.expect(jsonData[SelectionPdt].validation[\"status\"]).to.eql(\"VALID\");\r",
+							"    pm.expect(jsonData[SelectionPdt].synchronization[\"status\"]).to.eql(\"SYNCHRONIZED\"); //à verif dans le kafka\r",
+							"});\r",
+							"pm.collectionVariables.set(\"product_sku\", jsonData[SelectionPdt][\"product_sku\"]);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{OPERATOR_KEY}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{URL}}/api/mcm/products/export?updated_to={{date_jour}}&acceptance_status=ACCEPTED",
+					"host": [
+						"{{URL}}"
+					],
+					"path": [
+						"api",
+						"mcm",
+						"products",
+						"export"
+					],
+					"query": [
+						{
+							"key": "updated_since",
+							"value": "2021-04-27",
+							"disabled": true
+						},
+						{
+							"key": "updated_to",
+							"value": "{{date_jour}}"
+						},
+						{
+							"key": "acceptance_status",
+							"value": "ACCEPTED"
+						},
+						{
+							"key": "validation_status",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "synchronization_status",
+							"value": "SYNCHRONIZED",
+							"disabled": true
+						},
+						{
+							"key": "product_sku",
+							"value": "8714982010797",
+							"disabled": true
+						},
+						{
+							"key": "product_id",
+							"value": "8714982010797",
+							"disabled": true
+						},
+						{
+							"key": "variant_group_code",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "catalog",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "rejection_reason",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "category",
+							"value": "",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"value": "0"
+		},
+		{
+			"value": ""
+		},
+		{
+			"key": "date_jour",
+			"value": ""
+		},
+		{
+			"key": "Maxretry",
+			"value": ""
+		},
+		{
+			"key": "import_id",
+			"value": ""
+		}
+	]
+}
